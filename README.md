@@ -1,5 +1,4 @@
-<![CDATA[#  Manteia — Real-Time Solana Prediction Arena
-
+#   Manteia — Real-Time Solana Prediction Arena
 
 [![Solana](https://img.shields.io/badge/Solana-9945FF?style=for-the-badge&logo=solana&logoColor=white)](https://solana.com)
 [![Magic Block](https://img.shields.io/badge/MagicBlock-Ephemeral%20Rollups-blue?style=for-the-badge)](https://magicblock.gg)
@@ -11,54 +10,53 @@
 
 ---
 
-##  Highlights
+## ✨ Highlights
 
 | Feature | Detail |
 |---|---|
 | **⚡ 10-Second Predictions** | Pick a SOL/USD price range, choose a multiplier, and watch it resolve in real-time |
 | **�️ Sub-ms Finality** | State is delegated to MagicBlock Ephemeral Rollups — zero gas, instant confirmation |
-| ** Live Settlement** | Settlement service consumes on-chain events + live Pyth prices to resolve bets automatically |
-| ** Solana-Secured** | Final state commits back to Solana L1 on withdraw — full base-layer security |
+| **📡 Live Settlement** | Settlement service consumes on-chain events + live Pyth prices to resolve bets automatically |
+| **🔐 Solana-Secured** | Final state commits back to Solana L1 on withdraw — full base-layer security |
 | **🎮 Gamified Arena** | Multiplayer battles, leaderboards, and a practice arena — feels like a game, not a DEX |
 | **📱 Mobile-First** | React Native + Skia for buttery-smooth charts and one-handed trading on iOS & Android |
 
 ---
 
-##  Architecture Overview
+## 🏗️ Architecture Overview
 
 Manteia uses a **delegate → execute → settle → commit** lifecycle powered by MagicBlock Ephemeral Rollups. The user's on-chain PDA (`ProxyAccount`) is delegated to an ephemeral rollup for gasless, high-speed interactions, and committed back to Solana's base layer on withdrawal.
 
 ```mermaid
 flowchart TB
-    subgraph Client["📱 Mobile App (React Native + Skia)"]
+    subgraph Client["Mobile App - React Native + Skia"]
         UI["Trading Arena UI"]
         WS_CLIENT["WebSocket Client"]
     end
 
-    subgraph Solana["⛓️ Solana Base Layer"]
-        PROGRAM["Manteia Anchor Program<br/><code>HCvWBZ...DLNe</code>"]
-        PDA["ProxyAccount PDA<br/>(user bets, balance, state)"]
-        GAME["GameAccount<br/>(global vault)"]
+    subgraph Solana["Solana Base Layer"]
+        PROGRAM["Manteia Anchor Program"]
+        PDA["ProxyAccount PDA"]
+        GAME["GameAccount - Global Vault"]
     end
 
-    subgraph MagicBlock["⚡ MagicBlock Ephemeral Rollup"]
-        ER_STATE["Delegated ProxyAccount<br/>(gasless, sub-ms execution)"]
-        PYTH_ER["Pyth Price Feed<br/>(SOL/USD on ER)"]
+    subgraph MagicBlock["MagicBlock Ephemeral Rollup"]
+        ER_STATE["Delegated ProxyAccount"]
+        PYTH_ER["Pyth Price Feed - SOL/USD"]
     end
 
-    subgraph Backend["🖥️ Backend Services"]
-        PRICE["Price Broadcaster<br/>(Bun WS :3001)"]
-        EVENTS["Event Listener<br/>(@solana/web3.js)"]
+    subgraph Backend["Backend Services"]
+        PRICE["Price Broadcaster - Bun WS :3001"]
+        EVENTS["Event Listener"]
         REDIS["Redis Stream"]
-        SETTLE["Settlement Service<br/>(live price resolver)"]
+        SETTLE["Settlement Service"]
     end
 
-    %% User Flow
     UI -- "1. Create Account" --> PROGRAM
     PROGRAM -- "init ProxyAccount" --> PDA
     PDA -- "2. Delegate to ER" --> ER_STATE
 
-    UI -- "3. Place Bet (gasless)" --> ER_STATE
+    UI -- "3. Place Bet - gasless" --> ER_STATE
     ER_STATE -- "update state" --> ER_STATE
 
     ER_STATE -- "4. Emit Event" --> EVENTS
@@ -71,7 +69,7 @@ flowchart TB
 
     SETTLE -- "5. Resolve Bet" --> ER_STATE
 
-    ER_STATE -- "6. Withdraw: Commit & Undelegate" --> PDA
+    ER_STATE -- "6. Commit and Undelegate" --> PDA
     PDA -- "SOL payout" --> UI
 
     style Client fill:#1a1a2e,stroke:#e94560,color:#fff
@@ -82,55 +80,55 @@ flowchart TB
 
 ---
 
-##  Lifecycle: Bet → Settle → Withdraw
+## 🔄 Lifecycle: Bet → Settle → Withdraw
 
 The complete user journey from account creation to SOL withdrawal:
 
 ```mermaid
 sequenceDiagram
-    actor User as 👤 User
-    participant App as 📱 Mobile App
-    participant Program as ⛓️ Manteia Program
-    participant ER as ⚡ MagicBlock ER
-    participant Events as  Event Listener
-    participant Redis as 🔴 Redis Stream
-    participant Settler as 💰 Settlement Service
-    participant Pyth as 🔮 Pyth Price Feed
+    actor User as User
+    participant App as Mobile App
+    participant Program as Manteia Program
+    participant ER as MagicBlock ER
+    participant Events as Event Listener
+    participant Redis as Redis Stream
+    participant Settler as Settlement Service
+    participant Pyth as Pyth Price Feed
 
-    Note over User,Pyth: 1️⃣ ACCOUNT CREATION & DELEGATION
-    User->>App: Open app & connect wallet
+    Note over User,Pyth: ACCOUNT CREATION and DELEGATION
+    User->>App: Open app and connect wallet
     App->>Program: create_proxy_account()
     Program-->>Program: Init ProxyAccount PDA
     App->>Program: deposit(amount)
-    Program-->>Program: Transfer SOL → GameAccount vault
+    Program-->>Program: Transfer SOL to GameAccount vault
     App->>Program: delegate_proxy_account()
-    Program->>ER: Delegate ProxyAccount → Ephemeral Rollup
+    Program->>ER: Delegate ProxyAccount to Ephemeral Rollup
 
-    Note over User,Pyth: 2️⃣ PLACING BETS (Gasless on ER)
-    User->>App: Select price range & multiplier
+    Note over User,Pyth: PLACING BETS - Gasless on ER
+    User->>App: Select price range and multiplier
     App->>ER: place_bet(amount, range, window, multiplier)
-    ER-->>ER: Validate & store bet in ProxyAccount
+    ER-->>ER: Validate and store bet in ProxyAccount
     ER->>Events: Emit BetPlacedEvent
 
-    Note over User,Pyth: 3️⃣ REAL-TIME SETTLEMENT
-    Events->>Redis: xadd("stream", BetPlaced payload)
+    Note over User,Pyth: REAL-TIME SETTLEMENT
+    Events->>Redis: Push BetPlaced payload to stream
     Pyth-->>Settler: Live SOL/USD price feed
     Redis->>Settler: Consume bet events
     Settler->>Settler: Compare final price vs bet range
     Settler->>ER: resolve_bet(bet_id, won, payout)
-    ER-->>ER: Update ProxyAccount (unclaimed_balance)
+    ER-->>ER: Update ProxyAccount unclaimed_balance
     ER->>Events: Emit BetResolvedEvent
-    Events->>Redis: xadd("stream", BetResolved payload)
+    Events->>Redis: Push BetResolved payload to stream
 
-    Note over User,Pyth: 4️⃣ CLAIM & WITHDRAW (Commit to L1)
-    User->>App: Tap "Claim Winnings"
+    Note over User,Pyth: CLAIM and WITHDRAW - Commit to L1
+    User->>App: Tap Claim Winnings
     App->>ER: claim_and_commit()
-    ER-->>ER: Move unclaimed → balance
-    User->>App: Tap "Withdraw"
+    ER-->>ER: Move unclaimed to balance
+    User->>App: Tap Withdraw
     App->>ER: commit_and_undelegate()
-    ER->>Program: Commit state & undelegate → Solana L1
+    ER->>Program: Commit state and undelegate to Solana L1
     App->>Program: withdraw(amount)
-    Program-->>User: SOL transferred to wallet ✅
+    Program-->>User: SOL transferred to wallet
 ```
 
 ---
@@ -270,9 +268,9 @@ npx expo start
 
 ---
 
-##  Design Philosophy
+## 🎨 Design Philosophy
 
-Blitz-trade is built to feel like a **premium mobile game**, not a financial dashboard:
+Manteia is built to feel like a **premium mobile game**, not a financial dashboard:
 
 - **🎨 Visual Excellence** — Vibrant gradients, glassmorphism, and high-FPS Skia-rendered charts
 - **⚡ Speed** — Interactions feel like gestures, not blockchain transactions
@@ -281,7 +279,4 @@ Blitz-trade is built to feel like a **premium mobile game**, not a financial das
 
 ---
 
-<p align="center">
-  <strong>Built by the Blitz-trade Team</strong>
-</p>
-]]>
+
